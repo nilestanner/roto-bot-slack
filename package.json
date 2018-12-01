@@ -1,7 +1,7 @@
 {
-  "name": "easy-peasy-bot",
+  "name": "roto-bot",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "Manage your team's pager via Rotobot!",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,24 +9,28 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
+    "url": "git+https://github.com/nilestanner/roto-bot-slack.git"
   },
   "keywords": [
     "slack",
-    "bot"
+    "bot",
+    "pager",
+    "rotation"
   ],
-  "author": "D.E. Goodman-Wilson",
+  "author": "Niles Tanner",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app/issues"
+    "url": "https://github.com/nilestanner/roto-bot-slack/issues"
   },
-  "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
+  "homepage": "https://github.com/nilestanner/roto-bot-slack#readme",
   "engines": {
     "node": "5.1.1"
   },
   "dependencies": {
     "botkit": "0.2.2",
     "botkit-storage-mongo": "^1.0.2",
+    "dotenv": "^6.1.0",
+    "moment": "^2.22.2",
     "mongodb": "^1.4.39"
   }
 }

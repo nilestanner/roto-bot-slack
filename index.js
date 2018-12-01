@@ -1,12 +1,7 @@
-/**
- * A Bot for Slack!
- */
-
-
-/**
- * Define a function for initiating a conversation on installation
- * With custom integrations, we don't have a way to find out who installed us, so we can't message them :(
- */
+const moment = require('moment');
+require('dotenv').config();
+const people = process.env.ROTATION.split(',');
+const startDate = moment(process.env.STARTDATE,'YYYY-MM-DD');
 
 function onInstallation(bot, installer) {
     if (installer) {
@@ -21,11 +16,6 @@ function onInstallation(bot, installer) {
     }
 }
 
-
-/**
- * Configure the persistence options
- */
-
 var config = {};
 if (process.env.MONGOLAB_URI) {
     var BotkitStorage = require('botkit-storage-mongo');
@@ -37,10 +27,6 @@ if (process.env.MONGOLAB_URI) {
         json_file_store: ((process.env.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
     };
 }
-
-/**
- * Are being run as an app or a custom integration? The initialization will differ, depending
- */
 
 if (process.env.TOKEN || process.env.SLACK_TOKEN) {
     //Treat this as a custom integration
@@ -57,15 +43,6 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
 }
 
 
-/**
- * A demonstration for how to handle websocket events. In this case, just log when we have and have not
- * been disconnected from the websocket. In the future, it would be super awesome to be able to specify
- * a reconnect policy, and do reconnections automatically. In the meantime, we aren't going to attempt reconnects,
- * WHICH IS A B0RKED WAY TO HANDLE BEING DISCONNECTED. So we need to fix this.
- *
- * TODO: fixed b0rked reconnect behavior
- */
-// Handle events related to the websocket connection to Slack
 controller.on('rtm_open', function (bot) {
     console.log('** The RTM api just connected!');
 });
@@ -90,19 +67,28 @@ controller.hears('hello', 'direct_message', function (bot, message) {
 });
 
 
-/**
- * AN example of what could be:
- * Any un-handled direct mention gets a reaction and a pat response!
- */
-//controller.on('direct_message,mention,direct_mention', function (bot, message) {
-//    bot.api.reactions.add({
-//        timestamp: message.ts,
-//        channel: message.channel,
-//        name: 'robot_face',
-//    }, function (err) {
-//        if (err) {
-//            console.log(err)
-//        }
-//        bot.reply(message, 'I heard you loud and clear boss.');
-//    });
-//});
+
+controller.hears('pager', 'ambient', function (bot, message) {
+    message = message.toLowerCase();
+    if (message.text.includes('schedule')) {
+        const reply = people.map((person, index) => {
+            const date = moment().add(index, 'week');
+            const onPager = getOnPager(date);
+            return `${onPager} has pager for week of ${date.format('MMM, DD')}`;
+        }).join('\n');
+        bot.reply(message,reply);
+    } else if (message.text.includes('next')) {
+        const nextDate = moment().add(1, 'week');
+        const nextPager = getOnPager(nextDate);
+        const reply = `The next person on pager is ${nextPager} starting on ${nextDate.startOf('week').format('MMM, DD')}`;
+        bot.reply(message, reply);
+    } else {
+        bot.reply(message, getOnPager(moment()));
+    }
+    
+});
+
+const getOnPager = (date) => {
+    const week = date.diff(startDate, 'weeks');
+    return people[week % people.length];
+}
