@@ -20,7 +20,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
       # The tests replace Botkit/Slack with a fake controller, so only the two runtime
       # dependencies index.js loads directly are needed (pinned to the versions in package-lock.json).
-      # A full `npm ci` pulls the legacy botkit tree (including a GitHub tarball dependency)
-      # that is irrelevant to these tests.
-      - run: npm install --no-save --no-package-lock --ignore-scripts moment@2.22.2 dotenv@6.1.0
+      # They are installed outside the repo so the legacy botkit tree (including a dependency
+      # fetched as a GitHub tarball) is not installed, and made visible to the tests via NODE_PATH.
+      - name: Install test dependencies
+        run: |
+          mkdir "$RUNNER_TEMP/deps"
+          cd "$RUNNER_TEMP/deps"
+          npm init -y
+          npm install --ignore-scripts moment@2.22.2 dotenv@6.1.0
       - run: npm test
+        env:
+          NODE_PATH: ${{ runner.temp }}/deps/node_modules
