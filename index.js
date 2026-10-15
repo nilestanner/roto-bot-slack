@@ -74,21 +74,34 @@ controller.hears('pager', 'ambient', function (bot, message) {
         const reply = people.map((person, index) => {
             const date = moment().add(index, 'week');
             const onPager = getOnPager(date);
+            if (!onPager) {
+                return `Nobody has pager for week of ${date.format('MMM, DD')} (${notStartedMessage()})`;
+            }
             return `${onPager} has pager for week of ${date.format('MMM, DD')}`;
         }).join('\n');
         bot.reply(message,reply);
     } else if (message.text.includes('next')) {
         const nextDate = moment().add(1, 'week');
         const nextPager = getOnPager(nextDate);
+        if (!nextPager) {
+            bot.reply(message, notStartedMessage());
+            return;
+        }
         const reply = `The next person on pager is ${nextPager} starting on ${nextDate.startOf('week').format('MMM, DD')}`;
         bot.reply(message, reply);
     } else {
-        bot.reply(message, getOnPager(moment()));
+        bot.reply(message, getOnPager(moment()) || notStartedMessage());
     }
     
 });
 
+const notStartedMessage = () => `The pager rotation hasn't started yet. It starts on ${startDate.format('MMM, DD, YYYY')}.`;
+
+// Returns undefined for dates before the rotation's STARTDATE.
 const getOnPager = (date) => {
+    if (date.isBefore(startDate)) {
+        return undefined;
+    }
     const week = date.diff(startDate, 'weeks');
     return people[week % people.length];
 }
