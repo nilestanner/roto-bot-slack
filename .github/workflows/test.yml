@@ -1,0 +1,26 @@
+name: Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20.x, 22.x]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      # The tests replace Botkit/Slack with a fake controller, so only the two runtime
+      # dependencies index.js loads directly are needed (pinned to the versions in package-lock.json).
+      # A full `npm ci` pulls the legacy botkit tree (including a GitHub tarball dependency)
+      # that is irrelevant to these tests.
+      - run: npm install --no-save --no-package-lock --ignore-scripts moment@2.22.2 dotenv@6.1.0
+      - run: npm test
