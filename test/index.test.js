@@ -201,15 +201,32 @@ describe('roto-bot index.js', () => {
       assert.deepStrictEqual(replies, [[msg, 'Alice']]);
     });
 
-    // BUG (not fixed in this PR): before STARTDATE the week diff is negative, so the modulo yields
-    // a negative index and the bot replies "undefined".
-    it('handles dates before STARTDATE',
-      { todo: 'negative week offset indexes people[-n] and returns undefined' },
-      () => {
-        const { controller } = loadBot();
-        at('2023-12-20T12:00:00');
-        const [reply] = runPager(controller, 'pager');
-        assert.ok(['Alice', 'Bob', 'Carol'].includes(reply), `got ${reply}`);
-      });
+    it('says the rotation has not started for dates before STARTDATE', () => {
+      const { controller } = loadBot();
+      at('2023-12-20T12:00:00');
+      assert.deepStrictEqual(runPager(controller, 'pager'),
+        ["The pager rotation hasn't started yet. It starts on Jan, 01, 2024."]);
+    });
+
+    it('says the rotation has not started for "next" when the next week is still before STARTDATE', () => {
+      const { controller } = loadBot();
+      at('2023-12-20T12:00:00');
+      assert.match(runPager(controller, 'pager next')[0], /hasn't started yet/);
+    });
+
+    it('"schedule" before STARTDATE marks unstarted weeks and lists started ones', () => {
+      const { controller } = loadBot();
+      at('2023-12-27T12:00:00'); // weeks: Dec 27 (before), Jan 3 (Alice), Jan 10 (Bob)
+      const lines = runPager(controller, 'pager schedule')[0].split('\n');
+      assert.match(lines[0], /^Nobody has pager for week of Dec, 27 \(The pager rotation hasn't started yet/);
+      assert.strictEqual(lines[1], 'Alice has pager for week of Jan, 03');
+      assert.strictEqual(lines[2], 'Bob has pager for week of Jan, 10');
+    });
+
+    it('the first moment of STARTDATE is already the first person', () => {
+      const { controller } = loadBot();
+      at('2024-01-01T00:00:00');
+      assert.deepStrictEqual(runPager(controller, 'pager'), ['Alice']);
+    });
   });
 });
