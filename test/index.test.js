@@ -45,9 +45,8 @@ const loadBot = ({ rotation = 'Alice,Bob,Carol', startDate = '2024-01-01', env =
 
 const handlerFor = (controller, pattern) => controller.hearsHandlers.find(h => h.pattern === pattern).fn;
 
-// Real Botkit messages are plain objects, but index.js calls `message.toLowerCase()` on them
-// (see the todo test below). This stand-in lets us exercise the rest of the handler logic.
-const message = (text) => ({ text, toLowerCase() { return this; } });
+// Botkit messages are plain objects with a `text` field.
+const message = (text) => ({ text });
 
 const runPager = (controller, text) => {
   const replies = [];
@@ -186,19 +185,21 @@ describe('roto-bot index.js', () => {
       assert.deepStrictEqual(runPager(controller, 'pager'), ['Solo']);
     });
 
-    // BUG (not fixed in this PR): index.js does `message = message.toLowerCase()` on the Botkit
-    // message object, which has no toLowerCase, so every real "pager" message throws a TypeError.
-    // (It was presumably meant to be `message.text.toLowerCase()`; note that would also change the
-    // text sent via bot.reply.)
-    it('handles a real Botkit message object ({ text })',
-      { todo: 'pager handler calls message.toLowerCase() on the message object (TypeError)' },
-      () => {
-        const { controller } = loadBot();
-        at('2024-01-03T12:00:00');
-        const replies = [];
-        handlerFor(controller, 'pager')({ reply: (m, r) => replies.push(r) }, { text: 'pager' });
-        assert.deepStrictEqual(replies, ['Alice']);
-      });
+    it('matches keywords case-insensitively', () => {
+      const { controller } = loadBot();
+      at('2024-01-03T12:00:00');
+      assert.match(runPager(controller, 'PAGER Schedule')[0], /has pager for week of/);
+      assert.match(runPager(controller, 'Pager NEXT')[0], /^The next person on pager is/);
+    });
+
+    it('handles a real Botkit message object ({ text }) and replies to that message', () => {
+      const { controller } = loadBot();
+      at('2024-01-03T12:00:00');
+      const replies = [];
+      const msg = { text: 'pager', channel: 'C1' };
+      handlerFor(controller, 'pager')({ reply: (m, r) => replies.push([m, r]) }, msg);
+      assert.deepStrictEqual(replies, [[msg, 'Alice']]);
+    });
 
     // BUG (not fixed in this PR): before STARTDATE the week diff is negative, so the modulo yields
     // a negative index and the bot replies "undefined".

@@ -69,15 +69,15 @@ controller.hears('hello', 'direct_message', function (bot, message) {
 
 
 controller.hears('pager', 'ambient', function (bot, message) {
-    message = message.toLowerCase();
-    if (message.text.includes('schedule')) {
+    const text = (message.text || '').toLowerCase();
+    if (text.includes('schedule')) {
         const reply = people.map((person, index) => {
             const date = moment().add(index, 'week');
             const onPager = getOnPager(date);
             return `${onPager} has pager for week of ${date.format('MMM, DD')}`;
         }).join('\n');
         bot.reply(message,reply);
-    } else if (message.text.includes('next')) {
+    } else if (text.includes('next')) {
         const nextDate = moment().add(1, 'week');
         const nextPager = getOnPager(nextDate);
         const reply = `The next person on pager is ${nextPager} starting on ${nextDate.startOf('week').format('MMM, DD')}`;
